@@ -159,6 +159,7 @@ class YOLO:
 
 
     def detect_frame(self, img):
+        print("[Yitao] in yolo.py:detect_frame() is called...!")
         return self.tfnet.return_predict(img)   
 
 

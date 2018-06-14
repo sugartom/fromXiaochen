@@ -1,2 +1,4 @@
 # Ignore pyc files
 *.pyc
+res.avi
+stat.txt
