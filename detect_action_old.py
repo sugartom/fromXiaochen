@@ -1,32 +1,20 @@
 import numpy as np 
 from time import time 
-# import action_detector.models.c3d_model as c3d_model
+import action_detector.models.c3d_model as c3d_model
 import os 
 import tensorflow as tf
 import cv2 
 
-# # Yitao-TLS-Begin
-# import os
-# import sys
-# from tensorflow.python.saved_model import builder as saved_model_builder
-# from tensorflow.python.saved_model import signature_constants
-# from tensorflow.python.saved_model import signature_def_utils
-# from tensorflow.python.saved_model import tag_constants
-# from tensorflow.python.saved_model import utils
-# from tensorflow.python.util import compat
-# # Yitao-TLS-End
-
-# Yitao =================================================================
-from grpc.beta import implementations
-# import tensorflow as tf
-
-from tensorflow_serving.apis import predict_pb2
-from tensorflow_serving.apis import prediction_service_pb2
-
-# import numpy as np
-
-from tensorflow.python.framework import tensor_util
-# Yitao =================================================================
+# Yitao-TLS-Begin
+import os
+import sys
+from tensorflow.python.saved_model import builder as saved_model_builder
+from tensorflow.python.saved_model import signature_constants
+from tensorflow.python.saved_model import signature_def_utils
+from tensorflow.python.saved_model import tag_constants
+from tensorflow.python.saved_model import utils
+from tensorflow.python.util import compat
+# Yitao-TLS-End
 
 class ActionDetector:
 
@@ -45,26 +33,26 @@ class ActionDetector:
 		self.running = running
 
 		# init TF
-		# is_training = tf.constant(False)
-		# self.input_seq = tf.placeholder(tf.float32, [None] + self.input_shape, name='InputSequence')
+		is_training = tf.constant(False)
+		self.input_seq = tf.placeholder(tf.float32, [None] + self.input_shape, name='InputSequence')
 
-		# self.model = c3d_model
-		# logits = self.model.inference(self.input_seq, is_training)
+		self.model = c3d_model
+		logits = self.model.inference(self.input_seq, is_training)
 
-		# self.pred_probs = tf.nn.sigmoid(logits)
-		# self.pred_probs = tf.clip_by_value(self.pred_probs, 1e-5, 1 - 1e-5)
+		self.pred_probs = tf.nn.sigmoid(logits)
+		self.pred_probs = tf.clip_by_value(self.pred_probs, 1e-5, 1 - 1e-5)
 
-		# init_op = tf.global_variables_initializer()
-		# model_saver = tf.train.Saver()
+		init_op = tf.global_variables_initializer()
+		model_saver = tf.train.Saver()
 
-		# config = tf.ConfigProto()
-		# config.gpu_options.allow_growth = True
+		config = tf.ConfigProto()
+		config.gpu_options.allow_growth = True
 
-		# self.sess = tf.Session(config=config)
+		self.sess = tf.Session(config=config)
 
 		# load checkpoints
-		# model_saver.restore(self.sess, self.ckpt_file)
-		# print('ACTION: Loading model checkpoint from: ' + self.ckpt_file)
+		model_saver.restore(self.sess, self.ckpt_file)
+		print('ACTION: Loading model checkpoint from: ' + self.ckpt_file)
 
 		self.valid = True 
 		print('ACTION: init done')
@@ -99,26 +87,16 @@ class ActionDetector:
 		# print('Done exporting!')
 		# # Yitao-TLS-End
 
-		# Yitao-TLS-Begin
-		# tf.app.flags.DEFINE_string('server', 'localhost:9000',
-		# 					'PredictionService host:port')
-		# tf.app.flags.DEFINE_string('image', '', 'path to image in JPEG format')
-		FLAGS = tf.app.flags.FLAGS
 
-		host, port = FLAGS.server.split(':')
-		channel = implementations.insecure_channel(host, int(port))
-		self.stub = prediction_service_pb2.beta_create_PredictionService_stub(channel)
-
-
-	# def dummy_detect_action(self, tubes):
-	# 	acts = {}
-	# 	# print(tubes)
-	# 	for fid in tubes:
-	# 		acts[fid] = {}
-	# 		for people in tubes[fid]:
-	# 			pos = tubes[fid][people][0]
-	# 			acts[fid][people] = [pos, []]
-	# 	return acts
+	def dummy_detect_action(self, tubes):
+		acts = {}
+		# print(tubes)
+		for fid in tubes:
+			acts[fid] = {}
+			for people in tubes[fid]:
+				pos = tubes[fid][people][0]
+				acts[fid][people] = [pos, []]
+		return acts
 
 
 	def transform(self, tubes):
@@ -135,22 +113,22 @@ class ActionDetector:
 	def data_input(self, tubes_in):
 		[timesteps, H, W, C] = self.input_shape
 
-		# # print("[Yitao] self.input_shape = %s" % str(self.input_shape))
-		# # print("[Yitao] tubes_in.keys() = %s" % str(tubes_in.keys()))
-		# check_keys = [1, 2]
-		# for check_key in check_keys:
-		# 	if (check_key in tubes_in):
-		# 		for i in range(1, 4):
-		# 			print("[Yitao] tubes_in[%d][%d][0] = %s" % (check_key, i, str(tubes_in[check_key][i][0])))
-		# 			print("[Yitao] tubes_in[%d][%d][1].shape = %s" % (check_key, i, str(tubes_in[check_key][i][1].shape)))
-		# 		# print("[Yitao] tubes_in[1][1][0] = %s" % str(tubes_in[1][1][0]))
-		# 		# print("[Yitao] tubes_in[1][1][1].shape = %s" % str(tubes_in[1][1][1].shape))
-		# 		# print("[Yitao] tubes_in[1][2][0] = %s" % str(tubes_in[1][2][0]))
-		# 		# print("[Yitao] tubes_in[1][2][1].shape = %s" % str(tubes_in[1][2][1].shape))
-		# 		# print("[Yitao] tubes_in[1][3][0] = %s" % str(tubes_in[1][3][0]))
-		# 		# print("[Yitao] tubes_in[1][3][1].shape = %s" % str(tubes_in[1][3][1].shape))
-		# 	# print("[Yitao] tubes_in[1][2].len = %s" % str(len(tubes_in[1][2])))
-		# 	# print("[Yitao] tubes_in[1][3].len = %s" % str(len(tubes_in[1][3])))
+		# print("[Yitao] self.input_shape = %s" % str(self.input_shape))
+		# print("[Yitao] tubes_in.keys() = %s" % str(tubes_in.keys()))
+		check_keys = [1, 2]
+		for check_key in check_keys:
+			if (check_key in tubes_in):
+				for i in range(1, 4):
+					print("[Yitao] tubes_in[%d][%d][0] = %s" % (check_key, i, str(tubes_in[check_key][i][0])))
+					print("[Yitao] tubes_in[%d][%d][1].shape = %s" % (check_key, i, str(tubes_in[check_key][i][1].shape)))
+				# print("[Yitao] tubes_in[1][1][0] = %s" % str(tubes_in[1][1][0]))
+				# print("[Yitao] tubes_in[1][1][1].shape = %s" % str(tubes_in[1][1][1].shape))
+				# print("[Yitao] tubes_in[1][2][0] = %s" % str(tubes_in[1][2][0]))
+				# print("[Yitao] tubes_in[1][2][1].shape = %s" % str(tubes_in[1][2][1].shape))
+				# print("[Yitao] tubes_in[1][3][0] = %s" % str(tubes_in[1][3][0]))
+				# print("[Yitao] tubes_in[1][3][1].shape = %s" % str(tubes_in[1][3][1].shape))
+			# print("[Yitao] tubes_in[1][2].len = %s" % str(len(tubes_in[1][2])))
+			# print("[Yitao] tubes_in[1][3].len = %s" % str(len(tubes_in[1][3])))
 
 		tubes = self.transform(tubes_in)
 
@@ -220,22 +198,7 @@ class ActionDetector:
 			for sample in data[i]:
 				sample_exp = np.expand_dims(sample, axis=0)
 
-				# Previous
-				# class_probs = self.sess.run(self.pred_probs, feed_dict={self.input_seq:sample_exp})
-
-				# New-Begin
-				request = predict_pb2.PredictRequest()
-				request.model_spec.name = 'c3d_tensorflow'
-				request.model_spec.signature_name = 'predict_images'
-				request.inputs['input'].CopyFrom(
-					tf.contrib.util.make_tensor_proto(sample_exp, dtype = np.float32, shape=sample_exp.shape))
-
-				result = self.stub.Predict(request, 10.0)  # 10 secs timeout
-				tmp = result.outputs['output']
-				class_probs = tensor_util.MakeNdarray(tmp)
-				# New-End
-
-
+				class_probs = self.sess.run(self.pred_probs, feed_dict={self.input_seq:sample_exp})
 				class_probs = class_probs[0]
 				class_probs = [self.get_3_decimal_float(prob) for prob in class_probs]
 
@@ -256,6 +219,6 @@ class ActionDetector:
 			print('ACTION: FPS: %d' % (self.batch * self.video_fps / (time() - cur_time)))
 
 		print('ACTION: Ending...')		
-		# self.sess.close()
+		self.sess.close()
 		print('ACTION: Ended')		
 

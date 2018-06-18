@@ -129,6 +129,8 @@ def _variable_with_weight_decay(name, shape, stddev, wd):
 
 
 def inference(input_imgs, is_training):
+  # print("[Yitao] in c3d_model.py:inference() is called!")
+  
   with tf.variable_scope('var_name') as var_scope:
     weights = {
             'wc1': _variable_with_weight_decay('wc1', [3, 3, 3, 3, 64], 0.04, 0.00),

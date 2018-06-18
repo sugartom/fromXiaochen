@@ -73,11 +73,11 @@ threads = []
 tube_thread = threading.Thread( target=tube_extractor.run )
 threads.append(tube_thread)
 
-# action_thread = threading.Thread( target=action_detector.run )
-# threads.append(action_thread)
+action_thread = threading.Thread( target=action_detector.run )
+threads.append(action_thread)
 
-# visualizer_thread = threading.Thread( target=visualizer.run )
-# threads.append(visualizer_thread)
+visualizer_thread = threading.Thread( target=visualizer.run )
+threads.append(visualizer_thread)
 
 for i in range(len(threads)):
 	threads[i].setDaemon(True)
@@ -90,7 +90,7 @@ while True:
 	except KeyboardInterrupt:
 		running[0] = False
 		print('MAIN: stopping...')
-		sleep(2)
+		sleep(0.5)
 		break
 
 print('done')
