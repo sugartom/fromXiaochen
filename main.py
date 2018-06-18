@@ -28,7 +28,7 @@ def parse_input():
 
 	parser.add_argument('--yolo_thres', type=float, default=0.25)
 	parser.add_argument('--gpu_id', type=int, default=0)
-	parser.add_argument('--gpu_util', type=float, default=0.5)
+	parser.add_argument('--gpu_util', type=float, default=0.8)
 
 	parser.add_argument('--max_age', type=int, default=30)
 	parser.add_argument('--min_hits', type=int, default=3)
@@ -73,11 +73,11 @@ threads = []
 tube_thread = threading.Thread( target=tube_extractor.run )
 threads.append(tube_thread)
 
-action_thread = threading.Thread( target=action_detector.run )
-threads.append(action_thread)
+# action_thread = threading.Thread( target=action_detector.run )
+# threads.append(action_thread)
 
-visualizer_thread = threading.Thread( target=visualizer.run )
-threads.append(visualizer_thread)
+# visualizer_thread = threading.Thread( target=visualizer.run )
+# threads.append(visualizer_thread)
 
 for i in range(len(threads)):
 	threads[i].setDaemon(True)

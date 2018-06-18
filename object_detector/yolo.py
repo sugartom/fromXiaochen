@@ -4,7 +4,7 @@
 # processing video: python yolo.py --video_src [video_path]
 
 
-from darkflow.net.build import TFNet
+# from darkflow.net.build import TFNet
 import cv2
 import sys 
 from time import time, sleep
@@ -14,24 +14,72 @@ import os
 from os import listdir
 from os.path import isfile, join
 
+# Yitao =================================================================
+from grpc.beta import implementations
+import tensorflow as tf
+
+from tensorflow_serving.apis import predict_pb2
+from tensorflow_serving.apis import prediction_service_pb2
+
+import numpy as np
+
+from tensorflow.python.framework import tensor_util
+
+from darkflow.cython_utils.cy_yolo2_findboxes import box_constructor
+
+def resize_input(im):
+  imsz = cv2.resize(im, (608, 608)) # hard-coded 608 according to predict.py's log...
+  imsz = imsz / 255.
+  imsz = imsz[:,:,::-1]
+  return imsz
+
+def process_box(b, h, w, threshold, meta):
+  max_indx = np.argmax(b.probs)
+  max_prob = b.probs[max_indx]
+  label = meta['labels'][max_indx]
+  if max_prob > threshold:
+    left  = int ((b.x - b.w/2.) * w)
+    right = int ((b.x + b.w/2.) * w)
+    top   = int ((b.y - b.h/2.) * h)
+    bot   = int ((b.y + b.h/2.) * h)
+    if left  < 0    :  left = 0
+    if right > w - 1: right = w - 1
+    if top   < 0    :   top = 0
+    if bot   > h - 1:   bot = h - 1
+    mess = '{}'.format(label)
+    return (left, right, top, bot, mess, max_indx, max_prob)
+  return None
+# Yitao =================================================================
+
 DEBUG = False
 
 class YOLO:
     def __init__(self, args):
-        opt = { "config": args.darkflow_config,  
-                "model": args.yolo_model, 
-                "load": args.yolo_weights, 
-                "gpuName": args.gpu_id,
-                "gpu": args.gpu_util,
-                "threshold": args.yolo_thres}
+        # opt = { "config": args.darkflow_config,  
+        #         "model": args.yolo_model, 
+        #         "load": args.yolo_weights, 
+        #         "gpuName": args.gpu_id,
+        #         "gpu": args.gpu_util,
+        #         "threshold": args.yolo_thres}
 
-        self.tfnet = TFNet(opt)
+        # self.tfnet = TFNet(opt)
         self.mode = 'VIDEO'
 
         self.colors = [ (127,255,127), (255,127,127), (127,127,255), (64,127,255), 
                     (150,255,200), (200,150,255), (255,255,0), (0,255,255), (255,0,255)]
         self.font = cv2.FONT_HERSHEY_SIMPLEX
 
+        # Yitao-TLS-Begin
+        tf.app.flags.DEFINE_string('server', 'localhost:9000',
+                           'PredictionService host:port')
+        tf.app.flags.DEFINE_string('image', '', 'path to image in JPEG format')
+        FLAGS = tf.app.flags.FLAGS
+
+        host, port = FLAGS.server.split(':')
+        channel = implementations.insecure_channel(host, int(port))
+        self.stub = prediction_service_pb2.beta_create_PredictionService_stub(channel)
+        self.threshold = args.yolo_thres
+        # Yitao-TLS-End
 
     def get_fname(self, p):
         if '/' in p:
@@ -159,10 +207,52 @@ class YOLO:
 
 
     def detect_frame(self, img):
-        print("[Yitao] in yolo.py:detect_frame() is called...!")
-        return self.tfnet.return_predict(img)   
+        # print("[Yitao] in yolo.py:detect_frame() is called...!")
+        # return self.tfnet.return_predict(img)   
 
+        # Yitao-TLS-Begin
+        h, w, _ = img.shape
+        im = resize_input(img)
+        this_inp = np.expand_dims(im, 0)
 
+        request = predict_pb2.PredictRequest()
+        request.model_spec.name = 'darkflow_yolo'
+        request.model_spec.signature_name = 'predict_images'
+        request.inputs['input'].CopyFrom(
+            tf.contrib.util.make_tensor_proto(this_inp, dtype = np.float32, shape=this_inp.shape))
+
+        result = self.stub.Predict(request, 10.0)  # 10 secs timeout
+        tmp = result.outputs['output']
+        tt = tensor_util.MakeNdarray(tmp)[0]
+        # print(tt[:,0,0])
+        # print(tt[:,0,1])
+
+        meta = {'labels': ['person', 'bicycle', 'car', 'motorbike', 'aeroplane', 'bus', 'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket', 'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair', 'sofa', 'pottedplant', 'bed', 'diningtable', 'toilet', 'tvmonitor', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush'], u'jitter': 0.3, u'anchors': [0.57273, 0.677385, 1.87446, 2.06253, 3.33843, 5.47434, 7.88282, 3.52778, 9.77052, 9.16828], u'random': 1, 'colors': [(254, 254, 254), (254, 254, 127), (254, 254, 0), (254, 254, -127), (254, 254, -254), (254, 127, 254), (254, 127, 127), (254, 127, 0), (254, 127, -127), (254, 127, -254), (254, 0, 254), (254, 0, 127), (254, 0, 0), (254, 0, -127), (254, 0, -254), (254, -127, 254), (254, -127, 127), (254, -127, 0), (254, -127, -127), (254, -127, -254), (254, -254, 254), (254, -254, 127), (254, -254, 0), (254, -254, -127), (254, -254, -254), (127, 254, 254), (127, 254, 127), (127, 254, 0), (127, 254, -127), (127, 254, -254), (127, 127, 254), (127, 127, 127), (127, 127, 0), (127, 127, -127), (127, 127, -254), (127, 0, 254), (127, 0, 127), (127, 0, 0), (127, 0, -127), (127, 0, -254), (127, -127, 254), (127, -127, 127), (127, -127, 0), (127, -127, -127), (127, -127, -254), (127, -254, 254), (127, -254, 127), (127, -254, 0), (127, -254, -127), (127, -254, -254), (0, 254, 254), (0, 254, 127), (0, 254, 0), (0, 254, -127), (0, 254, -254), (0, 127, 254), (0, 127, 127), (0, 127, 0), (0, 127, -127), (0, 127, -254), (0, 0, 254), (0, 0, 127), (0, 0, 0), (0, 0, -127), (0, 0, -254), (0, -127, 254), (0, -127, 127), (0, -127, 0), (0, -127, -127), (0, -127, -254), (0, -254, 254), (0, -254, 127), (0, -254, 0), (0, -254, -127), (0, -254, -254), (-127, 254, 254), (-127, 254, 127), (-127, 254, 0), (-127, 254, -127), (-127, 254, -254)], u'num': 5, u'thresh': self.threshold, 'inp_size': [608, 608, 3], u'bias_match': 1, 'out_size': [19, 19, 425], 'model': '/home/yitao/Documents/fun-project/darknet-repo/darkflow/cfg/yolo.cfg', u'absolute': 1, 'name': 'yolo', u'coord_scale': 1, u'rescore': 1, u'class_scale': 1, u'noobject_scale': 1, u'object_scale': 5, u'classes': 80, u'coords': 4, u'softmax': 1, 'net': {u'hue': 0.1, u'saturation': 1.5, u'angle': 0, u'decay': 0.0005, u'learning_rate': 0.001, u'scales': u'.1,.1', u'batch': 1, u'height': 608, u'channels': 3, u'width': 608, u'subdivisions': 1, u'burn_in': 1000, u'policy': u'steps', u'max_batches': 500200, u'steps': u'400000,450000', 'type': u'[net]', u'momentum': 0.9, u'exposure': 1.5}, 'type': u'[region]'}
+
+        boxes = list()
+        boxes = box_constructor(meta, tt)
+
+        # for box in boxes:
+            # print("(%s, %s, %s, %s) with class_num = %s, probs = %s" % (str(box.x), str(box.y), str(box.w), str(box.h), str(box.class_num), str(box.probs)))
+
+        boxesInfo = list()
+        for box in boxes:
+          tmpBox = process_box(box, h, w, self.threshold, meta)
+          if tmpBox is None:
+            continue
+          boxesInfo.append({
+            "label": tmpBox[4],
+            "confidence": tmpBox[6],
+            "topleft": {
+              "x": tmpBox[0],
+              "y": tmpBox[2]},
+            "bottomright": {
+              "x": tmpBox[1],
+              "y": tmpBox[3]}
+            })
+
+        return boxesInfo
+        # Yitao-TLS-End
 
 def parse_input():
     parser = argparse.ArgumentParser()
