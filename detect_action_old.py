@@ -113,22 +113,22 @@ class ActionDetector:
 	def data_input(self, tubes_in):
 		[timesteps, H, W, C] = self.input_shape
 
-		# print("[Yitao] self.input_shape = %s" % str(self.input_shape))
-		# print("[Yitao] tubes_in.keys() = %s" % str(tubes_in.keys()))
-		check_keys = [1, 2]
-		for check_key in check_keys:
-			if (check_key in tubes_in):
-				for i in range(1, 4):
-					print("[Yitao] tubes_in[%d][%d][0] = %s" % (check_key, i, str(tubes_in[check_key][i][0])))
-					print("[Yitao] tubes_in[%d][%d][1].shape = %s" % (check_key, i, str(tubes_in[check_key][i][1].shape)))
-				# print("[Yitao] tubes_in[1][1][0] = %s" % str(tubes_in[1][1][0]))
-				# print("[Yitao] tubes_in[1][1][1].shape = %s" % str(tubes_in[1][1][1].shape))
-				# print("[Yitao] tubes_in[1][2][0] = %s" % str(tubes_in[1][2][0]))
-				# print("[Yitao] tubes_in[1][2][1].shape = %s" % str(tubes_in[1][2][1].shape))
-				# print("[Yitao] tubes_in[1][3][0] = %s" % str(tubes_in[1][3][0]))
-				# print("[Yitao] tubes_in[1][3][1].shape = %s" % str(tubes_in[1][3][1].shape))
-			# print("[Yitao] tubes_in[1][2].len = %s" % str(len(tubes_in[1][2])))
-			# print("[Yitao] tubes_in[1][3].len = %s" % str(len(tubes_in[1][3])))
+		# # print("[Yitao] self.input_shape = %s" % str(self.input_shape))
+		# # print("[Yitao] tubes_in.keys() = %s" % str(tubes_in.keys()))
+		# check_keys = [1, 2]
+		# for check_key in check_keys:
+		# 	if (check_key in tubes_in):
+		# 		for i in range(1, 4):
+		# 			print("[Yitao] tubes_in[%d][%d][0] = %s" % (check_key, i, str(tubes_in[check_key][i][0])))
+		# 			print("[Yitao] tubes_in[%d][%d][1].shape = %s" % (check_key, i, str(tubes_in[check_key][i][1].shape)))
+		# 		# print("[Yitao] tubes_in[1][1][0] = %s" % str(tubes_in[1][1][0]))
+		# 		# print("[Yitao] tubes_in[1][1][1].shape = %s" % str(tubes_in[1][1][1].shape))
+		# 		# print("[Yitao] tubes_in[1][2][0] = %s" % str(tubes_in[1][2][0]))
+		# 		# print("[Yitao] tubes_in[1][2][1].shape = %s" % str(tubes_in[1][2][1].shape))
+		# 		# print("[Yitao] tubes_in[1][3][0] = %s" % str(tubes_in[1][3][0]))
+		# 		# print("[Yitao] tubes_in[1][3][1].shape = %s" % str(tubes_in[1][3][1].shape))
+		# 	# print("[Yitao] tubes_in[1][2].len = %s" % str(len(tubes_in[1][2])))
+		# 	# print("[Yitao] tubes_in[1][3].len = %s" % str(len(tubes_in[1][3])))
 
 		tubes = self.transform(tubes_in)
 
