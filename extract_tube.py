@@ -1,7 +1,7 @@
 import cv2
 from time import time
 import os 
-from object_detector.yolo import YOLO
+from object_detector.yolo_new import YOLO
 from tracker.tracker import Tracker
 
 NA = -1 
@@ -117,6 +117,8 @@ class TubeExtractor:
 			det = self.yolo.detect_frame(frame)
 			det_people, det_obj = self.yolo.parse_det(det)
 			
+			# print(det_people)
+
 			for i in range(len(det_people)):
 				det_people[i] = det_people[i][:4]
 
