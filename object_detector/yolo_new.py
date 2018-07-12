@@ -216,11 +216,11 @@ class YOLO:
         request.model_spec.name = 'devicehive_yolo'
         request.model_spec.signature_name = 'predict_images'
 
-        this_inp = resize_input(img)
-        # print(this_inp.shape)
+        img = resize_input(img)
+        # print(img.shape)
 
         request.inputs['input'].CopyFrom(
-            tf.contrib.util.make_tensor_proto(this_inp, dtype = np.float32, shape=this_inp.shape))
+            tf.contrib.util.make_tensor_proto(img, dtype = np.float32, shape=img.shape))
 
         result = self.stub.Predict(request, 10.0)  # 10 secs timeout
 
