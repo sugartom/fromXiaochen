@@ -17,11 +17,13 @@ import cv2
 # # Yitao-TLS-End
 
 # Yitao =================================================================
+import grpc
 from grpc.beta import implementations
 # import tensorflow as tf
 
 from tensorflow_serving.apis import predict_pb2
 from tensorflow_serving.apis import prediction_service_pb2
+from tensorflow_serving.apis import olympian_master_grpc_pb2
 
 # import numpy as np
 
@@ -105,9 +107,12 @@ class ActionDetector:
 		# tf.app.flags.DEFINE_string('image', '', 'path to image in JPEG format')
 		FLAGS = tf.app.flags.FLAGS
 
-		host, port = FLAGS.server.split(':')
-		channel = implementations.insecure_channel(host, int(port))
-		self.stub = prediction_service_pb2.beta_create_PredictionService_stub(channel)
+		# host, port = FLAGS.server.split(':')
+		# channel = implementations.insecure_channel(host, int(port))
+		# self.stub = prediction_service_pb2.beta_create_PredictionService_stub(channel)
+
+		channel = grpc.insecure_channel("localhost:50051")
+		self.stub = olympian_master_grpc_pb2.OlympianMasterStub(channel)
 
 
 	# def dummy_detect_action(self, tubes):
